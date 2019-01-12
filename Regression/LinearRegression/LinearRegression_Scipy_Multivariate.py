@@ -7,6 +7,8 @@ Created on Thu Jan 10 20:27:32 2019
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as pp
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
 
 J_hist = pd.DataFrame(columns =['theta', 'cost'])
@@ -55,7 +57,7 @@ res = minimize(costFunc, initial_theta, args=(X_norm, y))
 theta = res.x
 
 # Create some test data for which to predict
-test_data = {'area':[2456, 3575] , 'noOfBedrooms':[3,4]}
+test_data = {'area':[1200, 1500, 2456, 3575] , 'noOfBedrooms':[1,2,3,4]}
 X_test = pd.DataFrame(test_data)
 
 # scale features
@@ -70,3 +72,15 @@ y_pred = X_test.dot(theta)
 test_data['price'] = y_pred
 
 result_df = pd.DataFrame(test_data)
+
+'''
+# plot the fit
+fig = pp.figure()
+axes = fig.add_subplot(111, projection='3d')
+axes.set_xlabel('area')
+axes.set_ylabel('no of bedrooms')
+axes.set_zlabel('price')
+
+axes.scatter(house_prices['area'], house_prices['noOfBedrooms'], house_prices['price'], color='r')
+axes.plot_trisurf(result_df['area'], result_df['noOfBedrooms'], result_df['price'], color ='blue')
+'''
