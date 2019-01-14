@@ -11,6 +11,7 @@ import matplotlib.pyplot as pp
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.optimize import minimize
+from scipy import interpolate
 
 J_hist = pd.DataFrame(columns =['theta', 'cost'])
 iterations = 0
@@ -71,31 +72,46 @@ axes.set_ylabel('price')
 
 fig = pp.figure(figsize=(15,4))
 ax1 = fig.add_subplot(1,2,1,projection='3d')
-x = J_hist['theta'].apply(lambda x : x[0])
-y = J_hist['theta'].apply(lambda x : x[1])
-z = J_hist['cost']
+theta0_steps = J_hist['theta'].apply(lambda x : x[0])
+theta1_steps = J_hist['theta'].apply(lambda x : x[1])
+J_steps = J_hist['cost']
 
 ax1.set_xlabel('theta 0')
 ax1.set_ylabel('theta 1')
 ax1.set_zlabel('Cost')
 
-ax1.plot(x, y, z, zdir = 'z')
+ax1.plot(theta0_steps, theta1_steps, J_steps, zdir = 'z')
 # Customize the viewing angle so its easier to see teh scatter points lie
 # on the plane y=0
 ax1.view_init(elev=30, azim=-25)
 
-'''
-t1 = np.arange(J_hist['theta'][0].min(), J_hist['theta'][0].min(), 0.5)
-t2 = np.arange(J_hist['theta'][1].min(), J_hist['theta'][1].min(), 0.5)
-T1, T2 = np.meshgrid(t1,t2)
-Z = np.sqrt(  (X**2)/ 2 + Y **2)
+xl = theta0_steps.min()
+xu = theta0_steps.max()
+yl = theta1_steps.min()
+yu = theta1_steps.max()
+
+# draw contours
+theta0_vals = np.linspace(0, 100000, 100)
+theta1_vals = np.linspace(0, 150, 100)
+J_vals = np.zeros((len(theta0_vals), len(theta1_vals)))
+T0, T1 = np.meshgrid(theta0_vals, theta1_vals)
+
+for i in range(0, T0.shape[0]):
+    for j in range(0, T0.shape[1]):
+         t = np.array([T0[i,j], T1[i,j]]).reshape(2,)
+         J_vals[i,j] = costFunc(t, X, y)
 
 
 #ax1.plot_wireframe(T1, T2, Z, rstride=1, cstride=1, colors='g')
 
 ax2 = fig.add_subplot(1,2,2)
-cs = ax2.contour(T1, T2, Z, cmap=cm.hsv, vmin=abs(Z).min(), vmax=abs(Z).max())
+cs = ax2.contour(T0, T1, J_vals, 15,  cmap= cm.hsv, origin = 'lower', extent=[0, 90000, 0, 150])
+ax2.scatter(theta0_steps, theta1_steps, marker='x', color='r')
+#ax2.imshow(J_vals, , cmap = cm.jet, alpha=0.9)
+ax2.clabel(cs, inline=True, fontsize=10)
+#ax2.clim(0,10)
+ax2.set_xlabel('theta 0')
+ax2.set_ylabel('theta 1')
 fig.colorbar(cs, ax=ax2)
 
 
-'''
