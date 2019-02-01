@@ -25,13 +25,17 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 
-def costFunc(theta, X, y):
+def costFunc(theta, X, y, reg_factor):
     m = y.shape[0]
     z = X.dot(theta)
     h = sigmoid(z)
     term1 = y * np.log(h)
     term2 = (1- y) * np.log(1 - h)
     J = -np.sum(term1 + term2, axis = 0) / m
+    
+    # Regularization
+    reg_term = (reg_factor * sum(theta ** 2))/ (2 * m)
+    J = J + reg_term
     return J            
 
 
@@ -58,7 +62,7 @@ def plotDecisionBoundary(theta,degree, axes):
     return cs
 
 ### MAIN #####
-degree = 4
+degree = 6
 components = pd.read_csv('component_tests.csv', header=None, names = ['feature 1', 'feature 2', 'faulty'] )
 
 # get positive and negative samples for plotting
@@ -66,14 +70,15 @@ pos = components['faulty'] == 1
 neg = components['faulty'] == 0
 
 # Visualize Data
-fig, axes = pp.subplots();
-axes.set_xlabel('Feature 1')
-axes.set_ylabel('Feature 2')
-axes.scatter(components.loc[pos, 'feature 1'], components.loc[pos, 'feature 2'], color = 'r', marker='x', label='Faulty')
-axes.scatter(components.loc[neg, 'feature 1'], components.loc[neg, 'feature 2'], color = 'g', marker='o', label='Good')
-axes.legend(title='Legend', loc = 'best' )
-axes.set_xlim(-1,1.5)
-axes.set_xlim(-1,1.5)
+fig, axes = pp.subplots(nrows=1, ncols=3, figsize=(15,4));
+axes1,axes2,axes3 = axes
+axes1.set_xlabel('Feature 1')
+axes1.set_ylabel('Feature 2')
+axes1.scatter(components.loc[pos, 'feature 1'], components.loc[pos, 'feature 2'], color = 'r', marker='x', label='Faulty')
+axes1.scatter(components.loc[neg, 'feature 1'], components.loc[neg, 'feature 2'], color = 'g', marker='o', label='Good')
+axes1.legend(title='Legend', loc = 'best' )
+axes1.set_xlim(-1,1.5)
+axes1.set_xlim(-1,1.5)
 
 
 
@@ -84,66 +89,30 @@ y = components.iloc[:, 2]
 
 initial_theta = np.zeros(X_poly.shape[1]).reshape(X_poly.shape[1], 1)
 
-res = minimize(costFunc, initial_theta, args=(X_poly, y))
+# No Regularization
+res = minimize(costFunc, initial_theta, args=(X_poly, y, 0))
 theta = res.x.reshape(res.x.shape[0], 1)
 
 # Plot Decision boundary
-fig, axes = pp.subplots();
-axes.set_xlabel('Feature 1')
-axes.set_ylabel('Feature 2')
-axes.scatter(components.loc[pos, 'feature 1'], components.loc[pos, 'feature 2'], color = 'r', marker='x', label='Faulty')
-axes.scatter(components.loc[neg, 'feature 1'], components.loc[neg, 'feature 2'], color = 'g', marker='o', label='Good')
+#fig, axes = pp.subplots();
+axes2.set_xlabel('Feature 1')
+axes2.set_ylabel('Feature 2')
+axes2.scatter(components.loc[pos, 'feature 1'], components.loc[pos, 'feature 2'], color = 'r', marker='x', label='Faulty')
+axes2.scatter(components.loc[neg, 'feature 1'], components.loc[neg, 'feature 2'], color = 'g', marker='o', label='Good')
 #axes.legend(title='Legend', loc = 'best' )
 
-plotDecisionBoundary(theta, degree, axes)
+plotDecisionBoundary(theta, degree, axes2)
 
+# Apply Regularization
+res = minimize(costFunc, initial_theta, args=(X_poly, y, 1))
+theta = res.x.reshape(res.x.shape[0], 1)
 
+# Plot Decision boundary
+#fig, axes = pp.subplots();
+axes3.set_xlabel('Feature 1')
+axes3.set_ylabel('Feature 2')
+axes3.scatter(components.loc[pos, 'feature 1'], components.loc[pos, 'feature 2'], color = 'r', marker='x', label='Faulty')
+axes3.scatter(components.loc[neg, 'feature 1'], components.loc[neg, 'feature 2'], color = 'g', marker='o', label='Good')
+#axes.legend(title='Legend', loc = 'best' )
 
-
-
-'''
-lass LogisticRegression:
-    def __init__(self, lr=0.01, num_iter=100000, fit_intercept=True, verbose=False):
-        self.lr = lr
-        self.num_iter = num_iter
-        self.fit_intercept = fit_intercept
-    
-    def __add_intercept(self, X):
-        intercept = np.ones((X.shape[0], 1))
-        return np.concatenate((intercept, X), axis=1)
-    
-    def __sigmoid(self, z):
-        return 1 / (1 + np.exp(-z))
-    def __loss(self, h, y):
-        return (-y * np.log(h) - (1 - y) * np.log(1 - h)).mean()
-    
-    def fit(self, X, y):
-        if self.fit_intercept:
-            X = self.__add_intercept(X)
-        
-        # weights initialization
-        self.theta = np.zeros(X.shape[1])
-        
-        for i in range(self.num_iter):
-            z = np.dot(X, self.theta)
-            h = self.__sigmoid(z)
-            gradient = np.dot(X.T, (h - y)) / y.size
-            self.theta -= self.lr * gradient
-            
-            if(self.verbose == True and i % 10000 == 0):
-                z = np.dot(X, self.theta)
-                h = self.__sigmoid(z)
-                print(f'loss: {self.__loss(h, y)} \t')
-    
-    def predict_prob(self, X):
-        if self.fit_intercept:
-            X = self.__add_intercept(X)
-    
-        return self.__sigmoid(np.dot(X, self.theta))
-    
-    def predict(self, X, threshold):
-        return self.predict_prob(X) >= threshold
-
-
-
-'''
+plotDecisionBoundary(theta, degree, axes3)
