@@ -14,39 +14,63 @@ from scipy.optimize import minimize
 J_hist = pd.DataFrame(columns =['theta', 'cost'])
 iterations = 0
 
-def scaleFeatures(X, min_val, std_dev):
-    X_norm = (X - min_val) / std_dev
-    return X_norm
-
-def costFunc(theta, X, y):
-    #h(x) = theta0* X0 + theta1*X1
-    #print('X:{0}, theta: {1}, y:{2}'.format(X.shape, theta.shape, y.shape))
-    y_pred = X.dot(theta)
-    # Calculate mean squared error
-    mse = ((y_pred - y) ** 2).mean()
-    J_hist.loc[len(J_hist)] = [theta, mse]
-    global iterations 
-    iterations = iterations + 1
-    return mse
-
-
-
 house_prices = pd.read_csv('house_prices.csv', header=None, 
                            names=['area', 'noOfBedrooms', 'price'])
+
+
+# features
+# multiple features
+X = house_prices[['area', 'noOfBedrooms']]
+
+
+# observed predictions
+y = house_prices['price'].values
+y = y.reshape(y.shape[0], 1)
+
+class MinMaxScaler:
+    def __init__(self):
+        self.mean = 0
+        self.variance = 0
+        
+    def fit(self, f):
+        self.mean = np.mean(f)
+        self.variance = np.max(f) - np.min(f)
+    
+    # f is an numpy array or a series
+    def scale(self, f):
+        return (f - self.mean)/self.variance
+    
+    def inverseScale(self, f):
+        return f * self.variance + self.mean
+    
+
+# Hypothesis function - h(x) = X.theta
+def hypothesisFunc(theta, X):
+    return X.dot(theta)
+
+# Cost Function - Mean Square Error
+def costFunc(theta, X, y):
+    m = X.shape[0]
+    y_pred = hypothesisFunc(theta,X)
+    y_pred = y_pred.reshape(y_pred.shape[0],1)
+    
+    # Calculate mean squared error
+    cost = np.sum((y_pred - y) ** 2)/ (2 * m)
+    J_hist.loc[len(J_hist)] = [theta, cost]
+    
+    
+    global iterations 
+    iterations = iterations + 1
+    return cost
+
 
 # initial theta
 initial_theta = np.ones(3).reshape(3,1)
 
-# multiple features
-X = house_prices[['area', 'noOfBedrooms']]
+scaler_X = MinMaxScaler()
+scaler_X.fit(X)
+X_norm = scaler_X.scale(X)
 
-min_val = np.min(X, axis = 0)
-std_dev = np.std(X, axis = 0)
-
-X_norm = scaleFeatures(X, min_val, std_dev)
-
-# observed predictions
-y = house_prices['price']
 
 # add X0 feature(all ones)
 X_norm = np.column_stack((np.ones(X_norm.shape[0]), X_norm))
@@ -61,13 +85,13 @@ test_data = {'area':[1200, 1500, 2456, 3575] , 'noOfBedrooms':[1,2,3,4]}
 X_test = pd.DataFrame(test_data)
 
 # scale features
-X_test = scaleFeatures(X_test, min_val, std_dev)
+X_test = scaler_X.scale(X_test)
 
 # add X0 Feature
 X_test = np.column_stack((np.ones(X_test.shape[0]), X_test))
 
 # Make Predictions
-y_pred = X_test.dot(theta)
+y_pred = hypothesisFunc(theta, X_test)
 
 test_data['price'] = y_pred
 
