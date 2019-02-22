@@ -29,8 +29,6 @@ def displayData(X):
     display_rows = int(np.floor(np.sqrt(m)))
     display_cols = int(np.ceil(m/display_rows))
     
-    padding = 1
-    
     fig, axes = pp.subplots( nrows=display_rows, ncols=display_cols, figsize=(20,10))
     pp.subplots_adjust(hspace = 0.01, wspace=0.01)
     k = 0
@@ -76,8 +74,7 @@ def nnCostFunc(nn_params, layers, X, y, reg_factor):
     
     X = np.column_stack((np.ones((m,1)), X))
     
-    # convert y from pure number to a one hot vector
-    y_matrix = get_one_hot(y, nn_layers[-1])
+    
 
     # first layer
     a1 = X # ( 42000, 401)
@@ -96,13 +93,13 @@ def nnCostFunc(nn_params, layers, X, y, reg_factor):
     # the cost is 1 x 10 vector with probabilities of each class for 
     # ith training example.
     # Our cost function for logistic regression
-    costK = (-y_matrix *  np.log(h) ) - ((1- y_matrix) * np.log(1 - h))
+    costK = (-y *  np.log(h) ) - ((1- y) * np.log(1 - h))
 
     intermediate_cost = np.sum(costK)
 
     # Back Propogation
     # Error Deltas
-    d3 = h - y_matrix
+    d3 = h - y
     # ignore the first column from theta2 since it is the bias unit
     d2 = (d3.dot(theta2[:,1:])) * sigmoidGradient(z2) # 42000x10 * 10x25 => 42000x25
     
@@ -141,7 +138,7 @@ def nnCostFunc(nn_params, layers, X, y, reg_factor):
     theta2_grad[:, 1:] = theta2_unreg[:, 1:] + R2[:,1:] 
     
     # unroll(flatten) the parameters
-    grad = np.concatenate(np.ravel(theta1_grad), np.ravel(theta2_grad))
+    grad = np.concatenate((np.ravel(theta1_grad), np.ravel(theta2_grad)))
     
     return (J, grad)
     
@@ -156,12 +153,20 @@ initial_Theta2 = getInitialWeights(nn_layers[1], nn_layers[2])
 # need to unroll (flatten) parameters
 initial_nn_params = np.concatenate((np.ravel(initial_Theta1), np.ravel(initial_Theta2)))
 
+X = X[:100, :]
+y = y[:100]
+
+
+# convert y from pure number to a one hot vector
+y_matrix = get_one_hot(y, nn_layers[-1])
+
 # mimimize our cost
 from scipy.optimize import minimize
 
 # regularization factor
 
-res = minimize(nnCostFunc, initial_nn_params, args=(nn_layers, X, y, 1))    
+res = minimize(nnCostFunc, initial_nn_params, args=(nn_layers, X, y_matrix, 1), jac=True, \
+               options={'maxiter': 100, 'disp':True})    
     
 theta = res.x
 
