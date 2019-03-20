@@ -10,6 +10,9 @@ import pandas as pd
 import matplotlib.pyplot as pp
 from scipy.optimize import minimize
 
+def hypothesisFunc(theta, X):
+    return X.dot(theta)
+
 def mapFeatures(X, degree):
     X_poly = X
     for i in range(2, degree + 1):
@@ -17,9 +20,10 @@ def mapFeatures(X, degree):
     return X_poly
 
 def costfunc(theta, X, y):
-    y_pred = X.dot(theta)
-    mse = ((y_pred-y) ** 2).mean()
-    return mse
+    m = X.shape[0]
+    y_pred = hypothesisFunc(theta, X)
+    cost = np.sum((y_pred-y) ** 2)/(2 * m)
+    return cost
 
 salaries = pd.read_csv('Position_Salaries.csv')
 
@@ -27,7 +31,7 @@ fig, axes = pp.subplots()
 axes.scatter(salaries['Level'], salaries['Salary'], marker='x', color='r')
 axes.set_xticklabels(salaries['Position'])
 
-degree = 4
+degree = 5
 X = salaries['Level'].values
 X = np.column_stack((np.ones(X.shape[0]), mapFeatures(X, degree)))
 y = salaries['Salary'].values

@@ -19,17 +19,23 @@ house_prices.plot.scatter(x='area', y = 'price', c='r')
 X = house_prices['area']
 y = house_prices['price']
 
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = \
-    train_test_split(X, y, test_size=0.3, random_state=101)
-
 from sklearn.linear_model import LinearRegression
 linreg = LinearRegression()
-linreg.fit(X_train.values.reshape((X_train.shape[0], 1)), y_train)
+linreg.fit(X.values.reshape((X.shape[0], 1)), y)
 
 # Do predictions
-y_pred = linreg.predict(X_test.values.reshape((X_test.shape[0], 1)))
+# Create some test data for which to predict
+xs = np.linspace(house_prices['area'].min(), house_prices['area'].max(), 10)
+xs = xs.reshape((xs.shape[0], 1))
+
+# ys = prediction for test values of xs
+ys = linreg.predict(xs)
+
 
 fig, axes = pp.subplots()
-axes.scatter(X, y, color='r')
-axes.plot(X_test, y_pred, color='b', marker='x') 
+axes.grid(color='b', alpha=0.8, linestyle='dotted', linewidth = 0.5)
+axes.scatter(X, y, marker='o', color='r')
+axes.plot(xs,ys, color='blue')
+axes.scatter(xs,ys,color='green', s=100, marker='o')
+axes.set_xlabel('area')
+axes.set_ylabel('price')
